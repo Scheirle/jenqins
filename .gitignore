@@ -2,3 +2,4 @@ build/
 .kdev4 #folder
 *.kdev4
 .directory
+*.kate-swp
