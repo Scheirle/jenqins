@@ -18,25 +18,31 @@
 
 IrcBot::IrcBot(QObject* parent) : IrcSession(parent), out(stdout)
 {
-    connect(this, SIGNAL(connected()), this, SLOT(onConnected()));
-
-	/*
-	GreetModule* greeter = new GreetModule(this);
-	connect(this, SIGNAL(messageReceived(IrcMessage*)), greeter, SLOT(onMessageReceived(IrcMessage*)));
-	*/
+	connect(this, SIGNAL(connected()), this, SLOT(onConnected()));
 
 	connect(this, SIGNAL(messageReceived(IrcMessage*)), this, SLOT(onMessageReceived(IrcMessage*)));
-
-	MessageModule* messenger = new MessageModule(this);
-	connect(this, SIGNAL(messageReceived(IrcMessage*)), messenger, SLOT(onMessageReceived(IrcMessage*)));
-
-	TopicModule* topic = new TopicModule(this);
-	connect(this, SIGNAL(messageReceived(IrcMessage*)), topic, SLOT(onMessageReceived(IrcMessage*)));
+	helpOutput.insert("help", "Shows this help.");
 
 	/*
-	EchoModule* echoer = new EchoModule(this);
-	connect(this, SIGNAL(messageReceived(IrcMessage*)), echoer, SLOT(onMessageReceived(IrcMessage*)));
-	*/
+	 *	GreetModule* greeter = new GreetModule(this);
+	 */
+	MessageModule* messenger = new MessageModule(this);	
+	TopicModule* topic = new TopicModule(this);
+	/*
+	 E c*hoModule* echoer = new EchoModule(this);
+	 */
+}
+
+void IrcBot::registerModule(BotModule* module, QString command, QString description)
+{
+	connect(this, SIGNAL(messageReceived(IrcMessage*)), module, SLOT(onMessageReceived(IrcMessage*)));
+	helpOutput.insert(command, description);
+}
+
+void IrcBot::registerModule(BotModule* module, QMap<QString, QString> moduleHelpOutput)
+{
+	connect(this, SIGNAL(messageReceived(IrcMessage*)), module, SLOT(onMessageReceived(IrcMessage*)));
+	helpOutput.unite(moduleHelpOutput);
 }
 
 QStringList IrcBot::channels() const
@@ -92,6 +98,30 @@ void IrcBot::onMessageReceived(IrcMessage* message)
 	} else if (message->type() == IrcMessage::Private) {
 		IrcPrivateMessage* msg = static_cast<IrcPrivateMessage*>(message);
 		out << "[PM] <" << msg->sender().name() << " > " << msg->message() << endl;
+		
+		//help
+		if (msg->target().compare(nickName(), Qt::CaseInsensitive) != 0) {
+			// message is from channel
+			if (msg->message().startsWith(nickName(), Qt::CaseInsensitive)) {
+				// message is for bot
+				QStringList parts = msg->message().split(" ", QString::SkipEmptyParts);
+				if (parts.size() >= 2) {
+					parts.removeFirst(); //bot name
+					
+					if (parts.first() == "help") {
+						out << "Sending help to " << msg->target() << endl;
+
+						sendCommand(IrcCommand::createMessage(msg->target(), QString("Commands\t - Description")));
+						QMapIterator<QString, QString> i(helpOutput);
+						while (i.hasNext()) {
+							i.next();
+							sendCommand(IrcCommand::createMessage(msg->target(), QString("%1\t - %2").arg(i.key()).arg(i.value())));
+						}
+					}
+				}
+			}
+		}
+		
 	} else if (message->type() == IrcMessage::Error) {
 		IrcErrorMessage* msg = static_cast<IrcErrorMessage*>(message);
 		out << "[Error] " << msg->error() << endl;

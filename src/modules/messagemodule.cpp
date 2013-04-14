@@ -32,6 +32,7 @@ MessageModule::MessageModule(IrcBot* bot): BotModule(bot)
 		dataIn >> messages;
 		out << "messages loaded." << endl;
 	}
+	bot->registerModule(this, "memo", "Creates a memo for a given user. Usage: memo USER CUSTOM MEMO");
 }
 
 MessageModule::~MessageModule()

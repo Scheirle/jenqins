@@ -21,7 +21,7 @@
 
 TopicModule::TopicModule(IrcBot* bot) : BotModule(bot)
 {
-
+	bot->registerModule(this, "topic", "Sets the topic of the channel. Usage: topic CUSTOM TOPIC");
 }
 
 TopicModule::~TopicModule()

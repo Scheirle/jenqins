@@ -14,6 +14,8 @@
 #include <QTextStream>
 #include <QStringList>
 
+class BotModule;
+
 class IrcBot : public IrcSession
 {
     Q_OBJECT
@@ -29,6 +31,9 @@ public:
 	QString nickservPassword() const;
 	void setNickservPassword(const QString& password);
 
+	void registerModule(BotModule *module, QString command, QString description);
+	void registerModule(BotModule *module, QMap<QString, QString> moduleHelpOutput);
+	
 private slots:
     void onConnected();
 	void onMessageReceived(IrcMessage* message);
@@ -37,6 +42,8 @@ private:
     QStringList m_channels;
     QString m_nickservPassword;
     QTextStream out;
+	
+	QMap<QString, QString> helpOutput;
 };
 
 #endif // IRCBOT_H
